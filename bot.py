@@ -182,4 +182,15 @@ async def coin(ctx):
     
     await ctx.send(embed=embed, file=file)
 
+@bot.command()
+async def merci(ctx):
+    embed = discord.Embed(
+        title="De rien!",
+        description="Avec plaisir!",
+        color=discord.Color.pink()
+    )
+    file = discord.File("mybeloved.gif", filename="mybeloved.gif")
+    embed.set_image(url="attachment://mybeloved.gif")
+    await ctx.send(embed=embed, file=file)
+
 bot.run(token)
