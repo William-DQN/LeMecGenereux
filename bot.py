@@ -7,6 +7,7 @@ import os
 import asyncio
 from datetime import datetime, timedelta
 import random
+import string
 
 # Chargement de la configuration
 with open('config.json', 'r') as f:
@@ -15,6 +16,7 @@ with open('config.json', 'r') as f:
 steam_url = config['steam_url']
 token = config['token']
 private_server = int(config['private_server'])  # Assurez-vous que l'ID est un entier
+API_KEY = config['api_key']
 
 # Définir les intentions
 intents = discord.Intents.default()
@@ -22,10 +24,8 @@ intents.message_content = True
 
 # Créer le bot
 bot = commands.Bot(command_prefix='!', intents=intents)
-
 # Chemin du fichier de suivi des messages envoyés
 sent_messages_file = 'sent_messages.txt'
-
 def read_sent_messages():
     if not os.path.exists(sent_messages_file):
         return set()
@@ -185,12 +185,44 @@ async def coin(ctx):
 @bot.command()
 async def merci(ctx):
     embed = discord.Embed(
-        title="De rien!",
-        description="Avec plaisir!",
+        title="De rien !",
+        description="Tout pour mon pote à la compote !",
         color=discord.Color.pink()
     )
     file = discord.File("mybeloved.gif", filename="mybeloved.gif")
     embed.set_image(url="attachment://mybeloved.gif")
     await ctx.send(embed=embed, file=file)
 
+
+# Définir la fonction pour générer une chaîne aléatoire
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_uppercase + string.ascii_letters, k=length))
+
+@bot.command()
+async def pauline(ctx):
+    searching_url = f"https://tenor.googleapis.com/v2/search?q=Taz&key={API_KEY}&limit=50"
+    response = requests.get(searching_url)
+    
+    # Vérification du statut HTTP
+    if response.status_code != 200:
+        await ctx.send(f"Erreur lors de la requête à l'API Tenor : {response.status_code}")
+        return
+    try:
+        data = response.json()
+    except requests.exceptions.JSONDecodeError:
+        await ctx.send("Erreur de décodage JSON de la réponse de l'API Tenor.")
+        print("Réponse brute:", response.text)  # Impression de la réponse brute pour le diagnostic
+        return
+    
+    if 'results' in data:
+        gif_url = random.choice(data['results'])['media_formats']['gif']['url']
+        embed = discord.Embed(
+            title="D'accord Madame Taz.",
+            description= random_string() + " à toi aussi **Pauline**.",
+            color=discord.Color.dark_grey()
+        )
+        embed.set_image(url=gif_url)
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send("Désolé, je n'ai pas pu trouver de GIF pour Taz.")
 bot.run(token)
