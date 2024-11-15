@@ -142,51 +142,58 @@ async def check_free_games():
         game_elements = soup.select('.search_result_row')
         print(f'Found {len(game_elements)} game elements')
 
-        free_game_urls = set()  # Utiliser un set pour éviter les duplications
+        free_game_info = []  # Liste pour stocker les jeux gratuits et leurs dates de fin
 
         for game in game_elements:
-            print(game.prettify())  # Afficher le contenu HTML de chaque élément de jeu pour le débogage
-
             discount_pct_element = game.select_one('.discount_pct')
             discount_final_price_element = game.select_one('.discount_final_price')
             url_element = game.get('href') or game.select_one('a')['href']
 
-            print(f'Discount element: {discount_pct_element}')  # Débogage : afficher l'élément de réduction
-            print(f'Final price element: {discount_final_price_element}')  # Débogage : afficher l'élément de prix
-            print(f'URL element: {url_element}')  # Débogage : afficher l'URL trouvée
-
             if discount_final_price_element:
                 final_price = discount_final_price_element.text.strip()
-                print(f'Final price: {final_price}')
 
                 if final_price == '0,00€':
                     if discount_pct_element:
                         discount_pct = discount_pct_element.text.strip()
-                        print(f'Discount percentage: {discount_pct}')
                         if discount_pct == '-100%':
                             if url_element and url_element.startswith('https://store.steampowered.com/app/'):
-                                free_game_urls.add(url_element)  # Ajouter l'URL au set
+                                # Analyser la page du jeu pour obtenir la date limite
+                                game_info = {'url': url_element, 'end_date': 'Inconnue'}  # Par défaut la date est 'Inconnue'
+                                
+                                # Récupérer la page du jeu pour obtenir la date de fin de l'offre
+                                game_page_response = requests.get(url_element)
+                                game_page_soup = BeautifulSoup(game_page_response.text, 'html.parser')
+                                
+                                # Rechercher l'élément contenant la date de fin de l'offre (la classe peut varier)
+                                date_element = game_page_soup.find('div', class_='game_area_purchase_game_wrapper')
+                                
+                                if date_element:
+                                    offer_end_text = date_element.get_text(strip=True)
+                                    
+                                    # Tenter de formater la date (en supposant un format spécifique de date)
+                                    try:
+                                        # Vous pouvez ajuster le format de la date en fonction de ce qui est trouvé
+                                        end_date = datetime.strptime(offer_end_text, "%B %d, %Y").strftime("%d %B %Y")
+                                        game_info['end_date'] = end_date  # Ajouter la date limite correcte
+                                        print(f'Offer ends on: {end_date}')
+                                    except ValueError:
+                                        print('Unable to parse the offer end date.')
+                                
+                                free_game_info.append(game_info)  # Ajouter l'info complète du jeu à la liste
                                 print(f'Found free game URL: {url_element}')
                             else:
                                 print('URL element not found for a free game or does not match the expected pattern')
-                    else:
-                        # Cas où l'élément de réduction n'est pas trouvé mais le prix final est correct
-                        if url_element and url_element.startswith('https://store.steampowered.com/app/'):
-                            free_game_urls.add(url_element)  # Ajouter l'URL au set
-                            print(f'Found free game URL (without discount pct): {url_element}')
-                else:
-                    print('Final price is not 0,00€')
-            else:
-                print('Final price element not found for a game')
 
         # Envoyer un message avec le nombre de jeux gratuits trouvés
-        if free_game_urls:
-            num_games = len(free_game_urls)  # Obtenir le nombre de jeux gratuits trouvés
+        if free_game_info:
+            num_games = len(free_game_info)  # Obtenir le nombre de jeux gratuits trouvés
             print(f'Attempting to send message to channel {private_server}...')
             channel = bot.get_channel(private_server)
             if channel:
-                # Créer un bloc de message avec les URLs
-                message_content = f'@everyone, j\'ai trouvé {num_games} jeu(x) gratuit(s) !\n' + '\n'.join(free_game_urls)
+                # Créer un bloc de message avec les URLs et les dates limites
+                message_content = f"@everyone, j'ai trouvé {num_games} jeu(x) gratuit(s) !\n"
+                for game in free_game_info:
+                    message_content += f"- {game['url']} (Offre valable jusqu'au : {game['end_date']})\n"
 
                 # Lire les identifiants des messages envoyés précédemment
                 sent_messages = read_sent_messages()
@@ -214,7 +221,7 @@ async def check_free_games():
         print(f'Error fetching Steam page: {e}')
     except Exception as e:
         print(f'Error parsing Steam page: {e}')
-
+        
 # Fonction pour envoyer le message de bonne année
 async def happy_new_year():
     channel = bot.get_channel(private_server)  # Remplacez private_server par l'ID réel du canal
@@ -357,7 +364,26 @@ async def amimir(ctx):
         await ctx.send("No mimir ?")
 
 @bot.command()
+async def trololo(ctx):
+    if ctx.author.voice:  # Vérifie si l'auteur est dans un canal vocal
+        current_channel = ctx.author.voice.channel
+        voice_client = await current_channel.connect()  # Utilisation correcte de current_channel
+        noise = discord.FFmpegPCMAudio(r"LeMecGenereux\Soundboard\Trololo.mp3")  # Chemin du fichier audio
+        
+        if not voice_client.is_playing():
+            voice_client.play(noise)
+            await ctx.send(f"Tu as été trollé !")
+            
+            while voice_client.is_playing():  # Attend la fin de la lecture
+                await asyncio.sleep(1)
+                
+            await voice_client.disconnect()  # Déconnecte une fois la lecture terminée
+    else:
+        await ctx.send(f"N'essaie même pas de me troller {ctx.author.mention} !")  # Mentionne l'auteur si pas dans un canal vocal
+
+@bot.command()
 async def help(ctx):
+
     # Envoyer l'image en tant que fichier joint
     file = discord.File("mecgenereux.jpg", filename="mecgenereux.jpg")
 
@@ -396,6 +422,13 @@ async def help(ctx):
         value="Répond avec un GIF aléatoire pour dire bonne nuit.", 
         inline=False
     )
+
+    embed.add_field(
+        name="!trololo 🎶", 
+        value="Fait Un son magique dans le channel du lanceur.", 
+        inline=False
+    )
+
     embed.add_field(
         name="!help 📜", 
         value="Affiche cette liste de commandes avec des descriptions détaillées.", 
