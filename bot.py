@@ -18,7 +18,7 @@ with open('config.json', 'r') as f:
 steam_url = config['steam_url']
 token = config['token']
 private_server = int(config['private_server'])  # Assurez-vous que l'ID est un entier
-API_KEY = config['api_key']
+api_tenor_key = config['api_tenor_key']
 general_channel = int(config['general_channel'])  # Assurez-vous que l'ID est un entier
 
 # Définir les intentions
@@ -308,7 +308,7 @@ def random_string(length=8):
 
 @bot.command()
 async def pauline(ctx):
-    searching_url = f"https://tenor.googleapis.com/v2/search?q=Taz&key={API_KEY}&limit=50"
+    searching_url = f"https://tenor.googleapis.com/v2/search?q=Taz&key={api_tenor_key}&limit=50"
     response = requests.get(searching_url)
     
     # Vérification du statut HTTP
@@ -337,7 +337,7 @@ async def pauline(ctx):
 
 @bot.command()
 async def amimir(ctx):
-    searching_url = f"https://tenor.googleapis.com/v2/search?q=amimir&key={API_KEY}&limit=150"
+    searching_url = f"https://tenor.googleapis.com/v2/search?q=amimir&key={api_tenor_key}&limit=150"
     response = requests.get(searching_url)
     
     # Vérification du statut HTTP
@@ -368,7 +368,7 @@ async def trololo(ctx):
     if ctx.author.voice:  # Vérifie si l'auteur est dans un canal vocal
         current_channel = ctx.author.voice.channel
         voice_client = await current_channel.connect()  # Utilisation correcte de current_channel
-        noise = discord.FFmpegPCMAudio(r"LeMecGenereux\Soundboard\Trololo.mp3")  # Chemin du fichier audio
+        noise = discord.FFmpegPCMAudio(r"soundboard\trololo.mp3")  # Chemin du fichier audio
         
         if not voice_client.is_playing():
             voice_client.play(noise)
@@ -425,7 +425,7 @@ async def help(ctx):
 
     embed.add_field(
         name="!trololo 🎶", 
-        value="Fait Un son magique dans le channel du lanceur.", 
+        value="Fait un son magique dans le channel du lanceur.", 
         inline=False
     )
 
