@@ -20,7 +20,7 @@ token = config['token']
 private_server = int(config['private_server'])  # Assurez-vous que l'ID est un entier
 api_tenor_key = config['api_tenor_key']
 general_channel = int(config['general_channel'])  # Assurez-vous que l'ID est un entier
-
+gnome_sticker = config['gnome_sticker']
 # Définir les intentions
 intents = discord.Intents.default()
 intents.message_content = True
@@ -368,7 +368,7 @@ async def trololo(ctx):
     if ctx.author.voice:  # Vérifie si l'auteur est dans un canal vocal
         current_channel = ctx.author.voice.channel
         voice_client = await current_channel.connect()  # Utilisation correcte de current_channel
-        noise = discord.FFmpegPCMAudio(r"soundboard\trololo.mp3")  # Chemin du fichier audio
+        noise = discord.FFmpegPCMAudio(r"soundboard/trololo.mp3")  # Chemin du fichier audio
         
         if not voice_client.is_playing():
             voice_client.play(noise)
@@ -382,6 +382,24 @@ async def trololo(ctx):
         await ctx.send(f"N'essaie même pas de me troller {ctx.author.mention} !")  # Mentionne l'auteur si pas dans un canal vocal
 
 @bot.command()
+async def gnome(ctx):
+    if ctx.author.voice:  # Vérifie si l'auteur est dans un canal vocal
+        current_channel = ctx.author.voice.channel
+        voice_client = await current_channel.connect()  # Utilisation correcte de current_channel
+        noise = discord.FFmpegPCMAudio(r"soundboard/youve_been_gnomed.mp3")  # Chemin du fichier audio
+        
+        if not voice_client.is_playing():
+            voice_client.play(noise)
+            await ctx.send(f"Tu as été Gnomé ! \n {gnome_sticker}")
+            
+            while voice_client.is_playing():  # Attend la fin de la lecture
+                await asyncio.sleep(1)
+                
+            await voice_client.disconnect()  # Déconnecte une fois la lecture terminée
+    else:
+        await ctx.send(f"N'essaie même pas de me gnomer {ctx.author.mention} ! (sinon Baldur when ?)")  # Mentionne l'auteur si pas dans un canal vocal
+
+@bot.command()
 async def help(ctx):
 
     # Envoyer l'image en tant que fichier joint
@@ -389,7 +407,7 @@ async def help(ctx):
 
     # Créer l'embed
     embed = discord.Embed(
-        title="**Commandes du Bot**",
+        title="**Commandes du Bot :**",
         description="Utilisez les commandes ci-dessous pour interagir avec le bot.",
         color=discord.Color.dark_gold(),
     )
