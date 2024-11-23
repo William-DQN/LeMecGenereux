@@ -390,7 +390,8 @@ async def gnome(ctx):
         
         if not voice_client.is_playing():
             voice_client.play(noise)
-            await ctx.send(f"Tu as été Gnomé ! \n {gnome_sticker}")
+            await ctx.send(f"Tu as été Gnomé !")
+            await ctx.send_sticker(gnome_sticker)
             
             while voice_client.is_playing():  # Attend la fin de la lecture
                 await asyncio.sleep(1)
