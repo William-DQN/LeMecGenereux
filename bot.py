@@ -308,8 +308,8 @@ async def jumpscare(ctx):
         description="J'suis cardiaque enculé !",
         color=discord.Color.dark_magenta()
     )
-    file = discord.File("scared.mp4", filename="scared.mp4")
-    embed.set_image(url="attachment://scared.mp4")
+    file = discord.File("scared.gif", filename="scared.gif")
+    embed.set_image(url="attachment://scared.gif")
     await ctx.send(embed=embed, file=file)
 
 
