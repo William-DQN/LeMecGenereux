@@ -20,7 +20,7 @@ token = config['token']
 private_server = int(config['private_server'])  # Assurez-vous que l'ID est un entier
 api_tenor_key = config['api_tenor_key']
 general_channel = int(config['general_channel'])  # Assurez-vous que l'ID est un entier
-gnome_sticker = config['gnome_sticker']
+gnome_sticker = config['gnome_sticker_id']
 # Définir les intentions
 intents = discord.Intents.default()
 intents.message_content = True
@@ -299,6 +299,17 @@ async def merci(ctx):
     )
     file = discord.File("mybeloved.gif", filename="mybeloved.gif")
     embed.set_image(url="attachment://mybeloved.gif")
+    await ctx.send(embed=embed, file=file)
+
+@bot.command()
+async def jumpscare(ctx):
+    embed = discord.Embed(
+        title="J'ai peur !",
+        description="J'suis cardiaque enculé !",
+        color=discord.Color.dark_magenta()
+    )
+    file = discord.File("scared.mp4", filename="scared.mp4")
+    embed.set_image(url="attachment://scared.mp4")
     await ctx.send(embed=embed, file=file)
 
 
