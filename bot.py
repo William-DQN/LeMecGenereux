@@ -312,7 +312,6 @@ async def jumpscare(ctx):
     embed.set_image(url="attachment://scared.gif")
     await ctx.send(embed=embed, file=file)
 
-
 # Définir la fonction pour générer une chaîne aléatoire
 def random_string(length=8):
     return ''.join(random.choices(string.ascii_uppercase + string.ascii_letters, k=length))
