@@ -20,7 +20,6 @@ token = config['token']
 private_server = int(config['private_server'])  # Assurez-vous que l'ID est un entier
 api_tenor_key = config['api_tenor_key']
 general_channel = int(config['general_channel'])  # Assurez-vous que l'ID est un entier
-gnome_sticker = config['gnome_sticker_id']
 # Définir les intentions
 intents = discord.Intents.default()
 intents.message_content = True
@@ -343,7 +342,6 @@ async def pauline(ctx):
         await ctx.send(embed=embed)
     else:
         await ctx.send("Désolé, je n'ai pas pu trouver de GIF de Taz.")
-
 
 @bot.command()
 async def amimir(ctx):
