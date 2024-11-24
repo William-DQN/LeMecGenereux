@@ -308,8 +308,8 @@ async def jumpscare(ctx):
         description="J'suis cardiaque enculé !",
         color=discord.Color.dark_magenta()
     )
-    file = discord.File("scared.gif", filename="scared.gif")
-    embed.set_image(url="attachment://scared.gif")
+    file = discord.File("jumpscared.gif", filename="jumpscared.gif")
+    embed.set_image(url="attachment://jumpscared.gif")
     await ctx.send(embed=embed, file=file)
 
 # Définir la fonction pour générer une chaîne aléatoire
@@ -400,9 +400,15 @@ async def gnome(ctx):
         
         if not voice_client.is_playing():
             voice_client.play(noise)
-            await ctx.send(f"Tu as été Gnomé !")
-            await ctx.send_sticker(gnome_sticker)
-            
+            embed = discord.Embed(
+                title="Tu as été gnomé(e) !",
+                description="Sinon baldur when ?",
+                color=discord.Color.dark_blue()
+            )
+            file = discord.File("gnome.gif", filename="gnome.gif")
+            embed.set_image(url="attachment://gnome.gif")
+            await ctx.send(embed=embed, file=file)
+                    
             while voice_client.is_playing():  # Attend la fin de la lecture
                 await asyncio.sleep(1)
                 
