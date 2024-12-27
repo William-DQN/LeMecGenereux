@@ -1,3 +1,4 @@
 .env
 config.json
 birthday.json
+sent_messages.txt

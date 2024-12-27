@@ -12,7 +12,7 @@ import random
 import string
 
 # Chargement de la configuration
-with open('config.json', 'r') as f:
+with open('config.json', 'r', encoding="utf-8") as f:
     config = json.load(f)
 
 steam_url = config['steam_url']
@@ -42,218 +42,6 @@ def write_sent_message(message_id):
 async def on_ready():
     print(f'{bot.user} est là !')
     # Appel unique pour le démarrage
-
-    # Attention à décommenter les lignes suivantes pour activer les appels programmés
-    await check_free_games()  
-    schedule_check.start()
-    send_weekly_message.start()
-    birthday_check.start()
-    bot.loop.create_task(happy_new_year())
-
-@tasks.loop(hours=24)
-async def birthday_check():
-    try:
-        # Obtenir la date et l'heure actuelles en UTC avec timezone-aware
-        now = datetime.now(timezone.utc)
-        current_day = now.day
-        current_month = now.month
-
-        # Charger les données des anniversaires
-        with open('birthday.json', 'r') as file:
-            birthday_data = json.load(file)
-
-        # Parcourir chaque utilisateur et vérifier si c'est son anniversaire aujourd'hui
-        for user_name, details in birthday_data.items():
-            birthday = datetime.strptime(details["birthday"], "%d/%m/%Y")
-            if birthday.day == current_day and birthday.month == current_month:
-                print(f"{user_name} fête son anniversaire aujourd'hui!")
-                
-                user_id = int(details["user_id"])
-                message = details["message"]
-                
-                try:
-                    # Obtenir l'utilisateur par son ID
-                    user = await bot.fetch_user(user_id)
-
-                    # Obtenir le canal général où envoyer le message
-                    channel = bot.get_channel(general_channel)  # Remplacez general_channel par l'ID réel du canal
-                    if channel:
-                        # Créer un embed pour souhaiter joyeux anniversaire
-                        embed = discord.Embed(
-                            title=f"Ouais ouais ouais {message} **{user_name}** !",
-                            description=f"🎉🎂 @everyone, on souhaite un joyeux anniversaire à {(user.mention)} ! 🎂🎉",
-                            color=discord.Color.yellow()
-                        )
-
-                        # Ajouter une image au message
-                        file = discord.File("birthdaygif.gif", filename="birthdaygif.gif")
-                        embed.set_image(url="attachment://birthdaygif.gif")
-
-                        # Envoyer le message avec l'embed et l'image
-                        await channel.send(embed=embed, file=file)
-                    else:
-                        print("Canal non trouvé")
-                except Exception as e:
-                    print(f"Erreur lors de l'envoi du message d'anniversaire à {user_name}: {e}")
-    except Exception as e:
-        print(f"Erreur lors de la vérification des anniversaires: {e}")
-
-@tasks.loop(hours=96)
-async def schedule_check():
-    await check_free_games()  # Appels programmés
-
-@tasks.loop(hours=24)
-async def send_weekly_message():
-    now = datetime.now(pytz.timezone("Europe/Paris"))  # GMT+1 avec gestion des changements d'heure
-    target_time = now.replace(hour=17, minute=30, second=0, microsecond=0)
-    
-    # Si aujourd'hui est jeudi et qu'il est avant 17h30, on envoie le message aujourd'hui
-    if now.weekday() == 3 and now < target_time:  # 3 correspond à jeudi
-        next_thursday = now
-    else:
-        # Trouver le prochain jeudi
-        days_until_thursday = (3 - now.weekday()) % 7
-        next_thursday = now + timedelta(days=days_until_thursday)
-        next_thursday = next_thursday.replace(hour=17, minute=30, second=0, microsecond=0)
-
-    delay = (next_thursday - now).total_seconds()
-
-    # Attendre jusqu'à jeudi 17h30
-    await asyncio.sleep(delay)
-
-    # Envoyer le message à 17h30 le jeudi
-    channel = bot.get_channel(private_server)  # Remplacez private_server par l'ID réel du canal
-    if channel:
-        await channel.send('Bonjour Epic.\nAurevoir Epic.')
-    else:
-        print('Channel not found')
-
-    # Reprogrammer pour la semaine suivante (exactement dans 7 jours à 17h30)
-    await asyncio.sleep(7 * 24 * 60 * 60)  # 7 jours en secondes
-
-async def check_free_games():
-    try:
-        response = requests.get(steam_url)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        game_elements = soup.select('.search_result_row')
-        print(f'Found {len(game_elements)} game elements')
-
-        free_game_info = []  # Liste pour stocker les jeux gratuits et leurs dates de fin
-
-        for game in game_elements:
-            discount_pct_element = game.select_one('.discount_pct')
-            discount_final_price_element = game.select_one('.discount_final_price')
-            url_element = game.get('href') or game.select_one('a')['href']
-
-            if discount_final_price_element:
-                final_price = discount_final_price_element.text.strip()
-
-                if final_price == '0,00€':
-                    if discount_pct_element:
-                        discount_pct = discount_pct_element.text.strip()
-                        if discount_pct == '-100%':
-                            if url_element and url_element.startswith('https://store.steampowered.com/app/'):
-                                # Analyser la page du jeu pour obtenir la date limite
-                                game_info = {'url': url_element, 'end_date': 'Inconnue'}  # Par défaut la date est 'Inconnue'
-                                
-                                # Récupérer la page du jeu pour obtenir la date de fin de l'offre
-                                game_page_response = requests.get(url_element)
-                                game_page_soup = BeautifulSoup(game_page_response.text, 'html.parser')
-                                
-                                # Rechercher l'élément contenant la date de fin de l'offre (la classe peut varier)
-                                date_element = game_page_soup.find('div', class_='game_area_purchase_game_wrapper')
-                                
-                                if date_element:
-                                    offer_end_text = date_element.get_text(strip=True)
-                                    
-                                    # Tenter de formater la date (en supposant un format spécifique de date)
-                                    try:
-                                        # Vous pouvez ajuster le format de la date en fonction de ce qui est trouvé
-                                        end_date = datetime.strptime(offer_end_text, "%B %d, %Y").strftime("%d %B %Y")
-                                        game_info['end_date'] = end_date  # Ajouter la date limite correcte
-                                        print(f'Offer ends on: {end_date}')
-                                    except ValueError:
-                                        print('Unable to parse the offer end date.')
-                                
-                                free_game_info.append(game_info)  # Ajouter l'info complète du jeu à la liste
-                                print(f'Found free game URL: {url_element}')
-                            else:
-                                print('URL element not found for a free game or does not match the expected pattern')
-
-        # Envoyer un message avec le nombre de jeux gratuits trouvés
-        if free_game_info:
-            num_games = len(free_game_info)  # Obtenir le nombre de jeux gratuits trouvés
-            print(f'Attempting to send message to channel {private_server}...')
-            channel = bot.get_channel(private_server)
-            if channel:
-                # Créer un bloc de message avec les URLs et les dates limites
-                message_content = f"@everyone, j'ai trouvé {num_games} jeu(x) gratuit(s) !\n"
-                for game in free_game_info:
-                    message_content += f"- {game['url']} (Offre valable jusqu'au : {game['end_date']})\n"
-
-                # Lire les identifiants des messages envoyés précédemment
-                sent_messages = read_sent_messages()
-                
-                # Créer une version unique de l'identifiant du message
-                unique_message_id = hash(message_content)  # Crée un hash unique basé sur le contenu du message
-                
-                # Vérifier si le message est déjà envoyé
-                if str(unique_message_id) in sent_messages:
-                    print('Message content already sent. Skipping send.')
-                    return
-
-                # Envoyer le message
-                sent_message = await channel.send(message_content)
-                
-                # Écrire l'identifiant du message dans le fichier de suivi
-                write_sent_message(unique_message_id)
-                print('Message sent to channel')
-            else:
-                print('Channel not found')
-        else:
-            print('No free game URLs found')
-
-    except requests.RequestException as e:
-        print(f'Error fetching Steam page: {e}')
-    except Exception as e:
-        print(f'Error parsing Steam page: {e}')
-        
-# Fonction pour envoyer le message de bonne année
-async def happy_new_year():
-    channel = bot.get_channel(private_server)  # Remplacez private_server par l'ID réel du canal
-    
-    # Avoir l'année en cours et l'année suivante
-    check_current_year = datetime.now(pytz.timezone("Europe/Paris")).year
-    next_year = check_current_year + 1
-    
-    # Date exacte du 1er janvier à minuit
-    first_jan = datetime(next_year, 1, 1, 0, 0, 0, tzinfo=pytz.timezone("Europe/Paris"))
-    now = datetime.now(pytz.timezone("Europe/Paris"))
-    
-    # Calcul du temps restant jusqu'au nouvel an
-    time_until_new_year = (first_jan - now).total_seconds()
-    
-    # Attendre jusqu'au 1er janvier à minuit
-    await asyncio.sleep(time_until_new_year)
-
-    # Envoyer le message une fois le nouvel an arrivé
-    if channel:
-        embed = discord.Embed(
-            title=f"Bonne année **{next_year}** ! 🎉🎆",
-            description="Que cette année soit pleine de joie, de bonheur et de réussite pour vous tous ! 🎇🎊",
-            color=discord.Color.dark_gold()
-        )
-        file = discord.File("fireworks.gif", filename="fireworks.gif")
-        embed.set_image(url="attachment://fireworks.gif")
-        await channel.send(embed=embed, file=file)
-    else:
-        print('Channel not found')
-
-    # Planifier à nouveau pour l'année suivante
-    await happy_new_year()
 
 @bot.command()
 async def ping(ctx):
@@ -401,7 +189,7 @@ async def gnome(ctx):
             embed = discord.Embed(
                 title="Tu as été gnomé(e) !",
                 description="Sinon baldur when ?",
-                color=discord.Color.dark_blue()
+                color=discord.Color.dark_teal()
             )
             file = discord.File("gnome.gif", filename="gnome.gif")
             embed.set_image(url="attachment://gnome.gif")
@@ -458,6 +246,12 @@ async def help(ctx):
 
     embed.add_field(
         name="!trololo 🎶", 
+        value="Fait un son magique dans le channel du lanceur.", 
+        inline=False
+    )
+
+    embed.add_field(
+        name="!gnome 🎶", 
         value="Fait un son magique dans le channel du lanceur.", 
         inline=False
     )
