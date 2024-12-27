@@ -26,18 +26,6 @@ intents.message_content = True
 
 # Créer le bot
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
-# Chemin du fichier de suivi des messages envoyés
-sent_messages_file = 'sent_messages.txt'
-def read_sent_messages():
-    if not os.path.exists(sent_messages_file):
-        return set()
-    with open(sent_messages_file, 'r') as file:
-        return set(line.strip() for line in file)
-
-def write_sent_message(message_id):
-    with open(sent_messages_file, 'a') as file:
-        file.write(f'{message_id}\n')
-
 @bot.event
 async def on_ready():
     print(f'{bot.user} est là !')

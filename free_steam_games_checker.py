@@ -2,6 +2,7 @@ import discord
 import json
 import asyncio
 import requests
+import os
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -16,6 +17,17 @@ STEAM_URL = config['steam_url']
 # Définir les intentions
 intents = discord.Intents.default()
 intents.message_content = True
+# Chemin du fichier de suivi des messages envoyés
+sent_messages_file = 'sent_messages.txt'
+def read_sent_messages():
+    if not os.path.exists(sent_messages_file):
+        return set()
+    with open(sent_messages_file, 'r') as file:
+        return set(line.strip() for line in file)
+
+def write_sent_message(message_id):
+    with open(sent_messages_file, 'a') as file:
+        file.write(f'{message_id}\n')
 
 
 async def steam_free_games_check(bot_token, channel_id, steam_url):
